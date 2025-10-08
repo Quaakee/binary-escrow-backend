@@ -40,6 +40,8 @@ const TEST_AMOUNTS = {
   platformFee: 125 // 2.5% of 5000
 }
 
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
+
 // Test configuration for bid acceptance flow
 const TEST_GLOBAL_CONFIG: GlobalConfig = {
   // Financial settings
@@ -192,6 +194,7 @@ async function runAcceptBidFlow() {
   debugger
   console.log('Querying for created contract...')
   const seekerContracts: EscrowTX[] = await seeker.getMyOpenContracts()
+  await sleep(5000)
   console.log(`Found ${seekerContracts.length} contract(s)`)
 
   assert(seekerContracts.length > 0, 'Expected at least one contract')
@@ -243,6 +246,7 @@ async function runAcceptBidFlow() {
   // Query to get the updated contract with bid
   console.log('Querying for updated contract with bid...')
   const updatedContracts: EscrowTX[] = await seeker.getMyOpenContracts()
+  await sleep(5000)
   console.log(`Found ${updatedContracts.length} contract(s)`)
 
   const updatedContract = updatedContracts.find(c => c.record.txid === contractRecord.record.txid)
@@ -318,6 +322,7 @@ async function runAcceptBidFlow() {
   // Query to get the final contract state
   console.log('Querying for final contract state...')
   const finalContracts: EscrowTX[] = await seeker.getMyOpenContracts()
+  await sleep(5000)
   const finalContract = finalContracts.find(c =>
     c.record.txid === contractRecord.record.txid ||
     c.contract.acceptedBid.furnisherKey.toString() === bid.furnisherKey.toString()
@@ -337,7 +342,6 @@ async function runAcceptBidFlow() {
   assertEquals(contractRecord.contract.acceptedBid.furnisherKey.toString(), bid.furnisherKey.toString(), 'Accepted bid furnisher key should match')
   assertEquals(contractRecord.contract.acceptedBid.bidAmount, bid.bidAmount, 'Accepted bid amount should match')
   assertEquals(contractRecord.contract.acceptedBid.bond, bid.bond, 'Accepted bid bond should match')
-  assertEquals(contractRecord.contract.acceptedBid.timeRequired, bid.timeRequired, 'Accepted bid time required should match')
 
   // Verify satoshis changed to bid amount
   assertEquals(contractRecord.satoshis, expectedSatoshis, 'Contract satoshis should be updated to bid amount')

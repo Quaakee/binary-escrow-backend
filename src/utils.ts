@@ -6,6 +6,15 @@ import { bsv, fill, PubKey, Sig, SmartContract, toByteString } from "scrypt-ts"
 const blankSig = Sig(toByteString(new PrivateKey(1).sign([]).toDER('hex') as string))
 
 /**
+ * Converts full BEEF to atomic BEEF (only immediate transaction, no ancestors)
+ * This reduces BEEF size by 90%+ while maintaining all functionality
+ */
+export const toAtomicBEEF = (beef: number[]): number[] => {
+    const tx = Transaction.fromBEEF(beef)
+    return Array.from(tx.toAtomicBEEF())
+}
+
+/**
  * Calculates realistic unlocking script length based on contract method and parameters
  * @param methodName - Contract method being called
  * @param params - Parameters being passed to the method
@@ -163,6 +172,7 @@ export const callContractMethod = async (
     unlockingScriptLength: number = 1200000 // Now optional - will calculate if not provided
 ) => {
 
+    debugger
     // Compute blank signatures for use at first until signatories are called
     const blankedParams = params.map((x) => typeof x === 'function' || x === 'WONTSIGN' ? blankSig : x)
 
@@ -188,7 +198,7 @@ export const callContractMethod = async (
     // Get a signable transaction we can work with
     const { signableTransaction } = await wallet.createAction({
         description: 'Update contract',
-        inputBEEF: escrow.beef,
+        inputBEEF: toAtomicBEEF(escrow.beef),
         inputs: [{
             outpoint: `${escrow.record.txid}.${escrow.record.outputIndex}`,
             unlockingScriptLength,  // Use calculated value
@@ -252,6 +262,7 @@ export const callContractMethod = async (
         (self as any)[`${methodName}OnChain`](...hydratedParams)
     }).toHex()
 
+    debugger
     // Complete the transaction
     return await wallet.signAction({
         reference: signableTransaction!.reference,
